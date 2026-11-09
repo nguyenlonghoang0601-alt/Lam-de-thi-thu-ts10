@@ -1,0 +1,1309 @@
+<!doctype html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MHstudy - Luyện Thi Tuyển Sinh 10 & Đấu Trường Gank Rank</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Trình đọc PDF và DOCX chạy ngay trong trình duyệt -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#1e1b4b' },
+            gank: { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', plat: '#005577', dia: '#b9f2ff', master: '#9d4edd', challenger: '#ff0055' }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f3f4f6; }
+    .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.06); }
+    .neon-border-gank { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3), inset 0 0 15px rgba(99, 102, 241, 0.2); }
+    .neon-glow-red { box-shadow: 0 0 20px rgba(255, 0, 85, 0.5); }
+    .neon-glow-purple { box-shadow: 0 0 20px rgba(157, 78, 221, 0.5); }
+    .neon-text-gold { text-shadow: 0 0 10px rgba(255, 215, 0, 0.7); }
+    .badge-shimmer { background: linear-gradient(110deg, #ffd700 8%, #fff 18%, #ffd700 33%); background-size: 200% 100%; animation: 2s shine linear infinite; }
+    @keyframes shine { to { background-position-x: -200%; } }
+    .omr-bubble.selected { background-color: #6366f1; color: white; border-color: #818cf8; box-shadow: 0 0 8px #6366f1; }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside id="sidebar" class="w-full md:w-64 glass z-30 fixed bottom-0 md:top-0 md:left-0 md:h-screen flex flex-row md:flex-col justify-between p-3 md:p-5 border-t md:border-t-0 md:border-r border-slate-800">
+    <div class="flex flex-col w-full">
+      <!-- BRAND LOGO -->
+      <div class="hidden md:flex items-center gap-3 mb-8 px-2">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-indigo-500/30">
+          MH
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400">MHstudy</span>
+          <span class="block text-[10px] font-bold text-indigo-400 tracking-widest uppercase">Tuyển Sinh 10 Pro</span>
+        </div>
+      </div>
+
+      <!-- NAV LINKS -->
+      <nav class="flex md:flex-col justify-around md:justify-start w-full gap-1">
+        <button onclick="switchTab('dashboard')" class="nav-btn active flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">⌂</span> <span class="hidden md:inline">Tổng quan & Hồ sơ</span>
+        </button>
+        <button onclick="switchTab('library')" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">▤</span> <span class="hidden md:inline">Kho Đề Thi</span>
+        </button>
+        <button onclick="switchTab('badges')" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-amber-400 hover:text-amber-300 hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">🎖️</span> <span class="hidden md:inline">Đổi điểm & Tài liệu</span>
+          <span id="badgeCountPill" class="ml-auto hidden md:inline-block bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/30">0 Badge</span>
+        </button>
+        <button onclick="switchTab('gank')" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-pink-400 hover:text-pink-300 hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">⚔️</span> <span class="hidden md:inline">Đấu Trường Gank</span>
+          <span id="gankRankPill" class="ml-auto hidden md:inline-block bg-pink-500/20 text-pink-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-pink-500/30">Đồng</span>
+        </button>
+        <button onclick="switchTab('arena')" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-amber-300 hover:text-amber-200 hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">🏆</span> <span class="hidden md:inline">Đấu trường danh vọng</span>
+        </button>
+        <button onclick="switchTab('studygroup')" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-cyan-300 hover:text-cyan-200 hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">💬</span> <span class="hidden md:inline">Nhóm học tập</span>
+        </button>
+        <button onclick="switchTab('rank')" class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+          <span class="text-lg">🏆</span> <span class="hidden md:inline">BXH Máy Chủ</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- USER MINI BANNER IN SIDEBAR -->
+    <div class="hidden md:block p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center font-bold text-indigo-300" id="sideAvatar">
+          MH
+        </div>
+        <div class="overflow-hidden">
+          <div class="font-bold text-xs text-white truncate" id="sideName">Chưa đăng nhập</div>
+          <div class="text-[10px] text-slate-400 truncate" id="sideSBD">SBD: ---</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 md:ml-64 p-4 md:p-8 mb-16 md:mb-0 max-w-7xl mx-auto w-full">
+    
+    <!-- HEADER BAR -->
+    <header class="flex items-center justify-between pb-6 mb-6 border-b border-slate-800/80">
+      <div class="flex items-center gap-3 md:hidden">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-sm">MH</div>
+        <span class="font-extrabold text-lg text-white">MHstudy</span>
+      </div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+          Hệ Thống Ôn Thi Tuyển Sinh 10 <span class="bg-indigo-500/20 text-indigo-400 text-xs px-2.5 py-1 rounded-full border border-indigo-500/30 font-semibold">MHstudy v3.6 Arena</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="hidden sm:inline">Trạng thái: </span><span class="text-emerald-400 font-bold">BẢN DEMO</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: LOGIN / IDENTITY PANEL -->
+    <div id="login" class="space-y-6">
+      <div class="relative overflow-hidden rounded-3xl p-8 md:p-12 glass border border-indigo-500/20">
+        <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="max-w-2xl relative z-10">
+          <span class="text-xs font-bold tracking-widest text-indigo-400 uppercase bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">CHÀO MỪNG BẠN ĐẾN VỚI MHstudy</span>
+          <h1 class="text-3xl md:text-5xl font-black tracking-tight text-white mt-4 mb-3 leading-tight">
+            Luyện tập thông minh,<br><span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Bứt phá Rank Gank & Đạt điểm 10!</span>
+          </h1>
+          <p class="text-slate-400 text-sm md:text-base mb-8">
+            Nền tảng thi thử Toán, Anh, Văn chuyên nghiệp với AI Chấm Văn tự động, tích lũy Huy hiệu đổi tệp tài liệu sách chuẩn tuyển sinh 10 Cần Thơ.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">Họ và tên thí sinh</label>
+              <input id="name" type="text" placeholder="Ví dụ: Nguyễn Văn A" class="w-full bg-slate-900/90 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-white outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-2 uppercase">Số báo danh (SBD)</label>
+              <input id="sbd" type="text" placeholder="Ví dụ: 100001" maxlength="12" class="w-full bg-slate-900/90 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-white outline-none transition-all">
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-4 items-center">
+            <button onclick="enterSystem()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+              🚀 XÁC NHẬN & VÀO HỆ THỐNG MHstudy
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: DASHBOARD -->
+    <div id="dashboard" class="hidden space-y-6">
+      <!-- USER STATS HERO BANNER -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass p-6 rounded-2xl border border-indigo-500/20 flex flex-col justify-between relative overflow-hidden">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-bold text-slate-400 uppercase">Hồ sơ thí sinh</span>
+            <span class="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full">MHstudy ID</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-black text-white" id="dashName">Nguyễn Văn A</h2>
+            <p class="text-sm text-slate-400 mt-1" id="dashSbd">SBD: 100001</p>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+            <span>Trạng thái: <strong class="text-emerald-400">Sẵn sàng Gank</strong></span>
+            <span>Khóa thi: 2026-2027</span>
+          </div>
+        </div>
+
+        <div class="glass p-6 rounded-2xl border border-amber-500/20 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-400 uppercase">Tủ Huy hiệu (Badges)</span>
+            <span class="text-xl">🎖️</span>
+          </div>
+          <div>
+            <div class="text-3xl font-black text-amber-300" id="dashBadgeCount">0 Huy hiệu</div>
+            <p class="text-xs text-slate-400 mt-1">Đạt 10đ (+2 Huy hiệu), 9đ-9.9đ (+1 Huy hiệu). Cứ 2 Huy hiệu đổi 1 File sách!</p>
+          </div>
+          <button onclick="switchTab('badges')" class="mt-4 text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1">
+            Vào cửa hàng đổi file tài liệu →
+          </button>
+        </div>
+
+        <div class="glass p-6 rounded-2xl border border-pink-500/20 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-pink-400 uppercase">Bậc Rank Gank Elo</span>
+            <span class="text-xl">⚔️</span>
+          </div>
+          <div>
+            <div class="text-2xl font-black text-pink-400" id="dashGankRank">BẬC ĐỒNG</div>
+            <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+              <div id="dashLpBar" class="bg-gradient-to-r from-pink-500 to-purple-500 h-full w-0"></div>
+            </div>
+            <p class="text-xs text-slate-400 mt-1.5" id="dashLpText">0 LP (Thắng thi thử để tích LP)</p>
+          </div>
+          <button onclick="switchTab('gank')" class="mt-4 text-xs font-bold text-pink-400 hover:text-pink-300 flex items-center gap-1">
+            Xem Đấu Trường Gank & Thăng Hạng →
+          </button>
+        </div>
+      </div>
+
+      <!-- FEATURED SUBJECT CARDS -->
+      <div>
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <span>📚</span> Môn Thi Ôn Luyện Trọng Tâm
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-card p-5 rounded-2xl border border-slate-700/60 hover:border-indigo-500/60 transition-all group">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-2xl">📐</span>
+              <span class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">12 Đề</span>
+            </div>
+            <h4 class="font-bold text-white text-base group-hover:text-indigo-400 transition-colors">Toán Học 10</h4>
+            <p class="text-xs text-slate-400 mt-1">Trắc nghiệm + Đúng/Sai + Trả lời ngắn chuẩn cấu trúc mới.</p>
+            <button onclick="openSubject('math')" class="mt-4 w-full bg-slate-800 hover:bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all">Làm bài ngay</button>
+          </div>
+
+          <div class="glass-card p-5 rounded-2xl border border-slate-700/60 hover:border-pink-500/60 transition-all group">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-2xl">📖</span>
+              <span class="text-[10px] font-bold text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded">AI Auto-Grading</span>
+            </div>
+            <h4 class="font-bold text-white text-base group-hover:text-pink-400 transition-colors">Ngữ Văn 10</h4>
+            <p class="text-xs text-slate-400 mt-1">Đọc hiểu thơ/văn + AI Tự động chấm tự luận bài văn cực xịn.</p>
+            <button onclick="openSubject('literature')" class="mt-4 w-full bg-slate-800 hover:bg-pink-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all">Làm bài ngay</button>
+          </div>
+
+          <div class="glass-card p-5 rounded-2xl border border-slate-700/60 hover:border-emerald-500/60 transition-all group">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-2xl">🇬🇧</span>
+              <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">12 Đề</span>
+            </div>
+            <h4 class="font-bold text-white text-base group-hover:text-emerald-400 transition-colors">Tiếng Anh 10</h4>
+            <p class="text-xs text-slate-400 mt-1">28 câu trắc nghiệm + 12 câu tự luận điền từ/viết lại câu.</p>
+            <button onclick="openSubject('english')" class="mt-4 w-full bg-slate-800 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all">Làm bài ngay</button>
+          </div>
+
+          <div class="glass-card p-5 rounded-2xl border border-slate-700/60 hover:border-amber-500/60 transition-all group">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-2xl">⭐</span>
+              <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">Đề Chuẩn</span>
+            </div>
+            <h4 class="font-bold text-white text-base group-hover:text-amber-400 transition-colors">Toán Cần Thơ 26-27</h4>
+            <p class="text-xs text-slate-400 mt-1">Đề thi thử chính thức Cần Thơ có đầy đủ Ma trận & OMR.</p>
+            <button onclick="openSubject('official')" class="mt-4 w-full bg-slate-800 hover:bg-amber-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all">Làm đề chính thức</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYLLABUS UPLOAD GENERATOR -->
+      <div class="glass p-6 rounded-2xl border border-emerald-500/30">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>🧠</span> Tạo Đề Kiểm Tra Từ Tài Liệu (PDF / DOCX / TXT)
+        </h3>
+        <p class="text-xs text-slate-400 mt-1 mb-4">Chọn PDF, DOCX, TXT hoặc MD. MHstudy sẽ trích xuất nội dung tài liệu rồi tạo 12 câu trắc nghiệm, 4 câu đúng/sai (mỗi câu gồm 4 nhận định) và 3 câu tự luận.</p>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input id="syllabusFile" type="file" accept=".pdf,.docx,.txt,.md" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-300 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+          <button onclick="generateFromUpload()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-xl text-xs whitespace-nowrap transition-all">
+            Tải Lên & Sinh Đề Thi
+          </button>
+        </div>
+        <div id="uploadStatus" class="mt-2 text-xs text-indigo-400 font-semibold" role="status" aria-live="polite"></div>
+        <p class="text-[11px] text-slate-500 mt-2">Lưu ý: tệp được xử lý trên trình duyệt. Đề được biên soạn theo dạng đề kiểm tra: câu hỏi chọn đáp án dựa trên kiến thức trong tài liệu, nhận định đúng/sai và câu tự luận; không dùng dạng điền khuyết.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 3: LIBRARY / EXAM SELECTOR -->
+    <div id="library" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 id="libraryTitle" class="text-xl font-bold text-white">KHO ĐỀ THI</h2>
+        <button onclick="switchTab('dashboard')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl">← Quay lại</button>
+      </div>
+      <div id="examGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- SECTION 4: BADGES & STORE (ĐỔI HUY HIỆU LẤY FILE SÁCH / ĐỀ THI) -->
+    <div id="badges" class="hidden space-y-6">
+      <div class="glass p-6 rounded-3xl border border-amber-500/30 relative overflow-hidden">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">HỆ THỐNG ĐỔI ĐIỂM KHIẾN BẠN GIỎI HƠN</span>
+            <h2 class="text-2xl md:text-3xl font-black text-white mt-1">🎖️ Cửa Hàng Huy hiệu MHstudy</h2>
+            <p class="text-xs text-slate-300 mt-1">Thi đạt 10 điểm = <strong>2 Huy hiệu</strong> | Thi đạt từ 9.0 đến 9.9 điểm = <strong>1 Huy hiệu</strong>. Tài liệu mở khóa từ 1–16 huy hiệu và có thể đọc trực tiếp trên web.</p>
+          </div>
+          <div class="bg-amber-500/10 border border-amber-500/40 p-4 rounded-2xl text-center min-w-[160px]">
+            <span class="text-xs font-bold text-amber-300 block">Huy hiệu hiện có</span>
+            <span id="storeBadgeCount" class="text-3xl font-black text-amber-400">0 🎖️</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="rewardStoreGrid">
+        <!-- Rewards will be injected via JS -->
+      </div>
+    </div>
+
+    <!-- SECTION 5: GANK ARENA & RANK ELO SYSTEM (CYBERPUNK STYLE) -->
+    <div id="gank" class="hidden space-y-6">
+      <!-- HERO RANK CARD -->
+      <div class="relative overflow-hidden rounded-3xl p-8 glass border border-purple-500/30 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="relative z-10">
+          <span class="text-xs font-black tracking-widest text-pink-400 uppercase bg-pink-500/10 px-3 py-1 rounded-full border border-pink-500/30">
+            ⚔️ ĐẤU TRƯỜNG GANK ELO MHstudy
+          </span>
+          <h2 class="text-3xl md:text-4xl font-black text-white mt-3" id="gankRankTitle">BẬC ĐỒNG (BRONZE)</h2>
+          <p class="text-slate-300 text-xs md:text-sm mt-2 max-w-xl">
+            Tích lũy Điểm LP bằng cách hoàn thành bài thi với điểm số từ 8.0 trở lên. Đạt mốc LP cao để bứt phá lên bậc <strong>THẠCH ĐẤU GANK MASTER</strong>!
+          </p>
+          <div class="mt-6 flex items-center justify-center md:justify-start gap-4">
+            <div class="text-left">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Điểm LP Hiện Tại</span>
+              <span class="text-2xl font-black text-pink-400" id="gankLpVal">0 LP</span>
+            </div>
+            <div class="h-8 w-px bg-slate-800"></div>
+            <div class="text-left">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Tỉ lệ Thắng Gank</span>
+              <span class="text-2xl font-black text-emerald-400" id="gankWinRate">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIG RANK BADGE DISPLAY -->
+        <div class="relative flex-shrink-0">
+          <div id="gankBadgeGlow" class="w-40 h-40 rounded-full bg-gradient-to-tr from-amber-700 to-amber-900 border-4 border-amber-500 flex flex-col items-center justify-center shadow-2xl shadow-amber-600/40 transform hover:scale-105 transition-all">
+            <span class="text-5xl" id="gankIcon">🛡️</span>
+            <span class="text-xs font-black text-amber-200 mt-2 uppercase tracking-widest" id="gankBadgeText">ĐỒNG</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RANK TIERS PROGRESSION -->
+      <div class="glass p-6 rounded-2xl border border-slate-800">
+        <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Hệ Thống Bậc Hạng Gank LP</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-amber-800/40">
+            <span class="text-2xl block">🥉</span>
+            <span class="text-xs font-bold text-amber-600 block mt-1">Đồng</span>
+            <span class="text-[10px] text-slate-400">0 - 99 LP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-600/40">
+            <span class="text-2xl block">🥈</span>
+            <span class="text-xs font-bold text-slate-300 block mt-1">Bạc</span>
+            <span class="text-[10px] text-slate-400">100 - 199 LP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-amber-500/40">
+            <span class="text-2xl block">🥇</span>
+            <span class="text-xs font-bold text-amber-400 block mt-1">Vàng</span>
+            <span class="text-[10px] text-slate-400">200 - 299 LP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-cyan-500/40">
+            <span class="text-2xl block">💎</span>
+            <span class="text-xs font-bold text-cyan-400 block mt-1">Bạch Kim</span>
+            <span class="text-[10px] text-slate-400">300 - 399 LP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-blue-500/40">
+            <span class="text-2xl block">🔷</span>
+            <span class="text-xs font-bold text-blue-400 block mt-1">Kim Cương</span>
+            <span class="text-[10px] text-slate-400">400 - 499 LP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-purple-500/40">
+            <span class="text-2xl block">👑</span>
+            <span class="text-xs font-bold text-purple-400 block mt-1">Cao Thủ</span>
+            <span class="text-[10px] text-slate-400">500 - 699 LP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-gradient-to-b from-pink-950 to-purple-950 border border-pink-500/60 neon-glow-red">
+            <span class="text-2xl block animate-bounce">🔥</span>
+            <span class="text-xs font-black text-pink-400 block mt-1">THẠCH ĐẤU</span>
+            <span class="text-[10px] text-pink-300 font-bold">≥ 700 LP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="studygroup" class="hidden space-y-6">
+      <div class="glass p-6 rounded-3xl border border-cyan-500/30">
+        <span class="text-xs font-bold tracking-widest text-cyan-300 uppercase">MHstudy Community</span>
+        <h2 class="text-2xl font-black text-white mt-1">💬 Nhóm học tập & hỏi bài</h2>
+        <p class="text-xs text-slate-400 mt-2">Đăng câu hỏi, chia sẻ cách giải và cùng nhau ôn thi.</p>
+        <div class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-100">Bản demo: tin nhắn chỉ lưu trên trình duyệt hiện tại, chưa hiển thị cho người dùng khác. Chat nhiều người thật cần máy chủ và hệ thống tài khoản.</div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 glass p-5 rounded-2xl border border-slate-800">
+          <div id="chatMessages" class="space-y-3 min-h-48 max-h-[420px] overflow-y-auto mb-4" aria-live="polite"></div>
+          <form id="chatForm" class="space-y-3">
+            <textarea id="chatText" rows="3" maxlength="1000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-cyan-500" placeholder="Nhập câu hỏi hoặc nội dung cần mọi người giúp..."></textarea>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <label class="text-xs text-slate-400">Ảnh/video (bản demo sẽ từ chối tệp)
+                <input id="chatMedia" type="file" accept="image/*,video/*" class="block mt-2 text-xs max-w-full">
+              </label>
+              <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-5 py-3 rounded-xl">Gửi bài vào nhóm</button>
+            </div>
+            <p id="chatModerationStatus" class="text-xs text-slate-400" role="status">Bộ lọc từ ngữ đang bật; ảnh/video bị chặn vì chưa có kiểm duyệt máy chủ.</p>
+          </form>
+        </div>
+        <aside class="glass p-5 rounded-2xl border border-slate-800">
+          <h3 class="font-bold text-white mb-2">🛡️ Quy tắc an toàn</h3>
+          <ul class="text-xs text-slate-400 space-y-2 list-disc pl-4">
+            <li>Không đăng số điện thoại, địa chỉ, mật khẩu hoặc thông tin cá nhân.</li>
+            <li>Không xúc phạm, bắt nạt hoặc chia sẻ nội dung tình dục/bạo lực.</li>
+            <li>Ảnh/video chỉ nên bật khi có dịch vụ kiểm duyệt nội dung phía máy chủ.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ĐẤU TRƯỜNG DANH VỌNG -->
+    <div id="arena" class="hidden space-y-6">
+      <div class="glass p-6 md:p-8 rounded-3xl border border-amber-500/30">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><p class="text-xs font-bold tracking-widest text-amber-300">MHSTUDY COMPETITIVE</p>
+            <h2 class="text-2xl md:text-3xl font-black text-white mt-2">🏆 ĐẤU TRƯỜNG DANH VỌNG</h2>
+            <p class="text-sm text-slate-400 mt-2">Chọn môn, độ khó, số câu và thời gian cho mỗi hiệp đấu.</p></div>
+          <div class="rounded-2xl bg-slate-900 border border-slate-700 p-4 min-w-32"><div class="text-xs text-slate-400">Điểm xếp hạng</div><div id="arenaLp" class="text-2xl font-black text-amber-300">0 LP</div><div id="arenaTier" class="text-xs text-slate-400">Đồng</div></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="glass p-5 rounded-2xl border border-indigo-500/30 space-y-4">
+          <div><h3 class="text-lg font-black text-white">🤖 Thi đấu với AI</h3><p class="text-xs text-slate-400 mt-1">Đối thủ AI mô phỏng ngay trên thiết bị. Thắng được cộng LP; thua không bị trừ.</p></div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="text-xs text-slate-300">Môn học<select id="arenaSubject" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"><option value="math">Toán</option><option value="english">Tiếng Anh</option><option value="literature">Ngữ Văn</option><option value="science">Khoa học</option></select></label>
+            <label class="text-xs text-slate-300">Độ khó<select id="arenaDifficulty" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"><option value="easy">Dễ</option><option value="normal" selected>Trung bình</option><option value="hard">Khó</option></select></label>
+            <label class="text-xs text-slate-300">Số câu<select id="arenaCount" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"><option>5</option><option selected>10</option><option>15</option></select></label>
+            <label class="text-xs text-slate-300">Thời gian mỗi hiệp<select id="arenaDuration" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"><option value="2">2 phút</option><option value="5" selected>5 phút</option><option value="10">10 phút</option></select></label>
+          </div>
+          <button onclick="startArenaAI()" class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl py-3 text-sm font-black text-white">BẮT ĐẦU ĐẤU VỚI AI</button>
+        </div>
+        <div class="glass p-5 rounded-2xl border border-rose-500/30 space-y-4">
+          <div><h3 class="text-lg font-black text-white">⚔️ Đấu với người chơi</h3><p class="text-xs text-slate-400 mt-1">Thi đấu xếp hạng: thắng +20 LP, thua −15 LP.</p></div>
+          <div class="rounded-xl bg-rose-950/20 border border-rose-500/20 p-4 text-sm text-slate-300">Chế độ ghép trận trực tuyến cần máy chủ, tài khoản và kết nối thời gian thực. Bản HTML hiện tại chưa có máy chủ nên chưa thể ghép với người chơi ở thiết bị khác.</div>
+          <label class="block text-xs text-slate-300">Mã phòng bạn bè (giao diện thử nghiệm)<input id="arenaRoomCode" maxlength="8" placeholder="Ví dụ: MH7K2P" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white uppercase"></label>
+          <div class="flex gap-2"><button onclick="createArenaRoom()" class="flex-1 bg-rose-600 hover:bg-rose-500 rounded-xl py-3 text-xs font-bold text-white">Tạo mã phòng</button><button onclick="copyArenaRoom()" class="flex-1 bg-slate-700 hover:bg-slate-600 rounded-xl py-3 text-xs font-bold text-white">Sao chép mã</button></div>
+          <p id="arenaRoomStatus" class="text-xs text-amber-300" aria-live="polite">Mã phòng hiện chỉ dùng để minh họa giao diện, chưa kết nối được người chơi khác.</p>
+        </div>
+      </div>
+      <div id="arenaMatch" class="hidden glass p-5 md:p-7 rounded-2xl border border-indigo-500/30 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3"><div><p id="arenaMatchMode" class="text-xs font-bold text-indigo-300">ĐẤU VỚI AI</p><h3 id="arenaMatchTitle" class="text-xl font-black text-white">Hiệp đấu</h3></div><div class="text-right"><div id="arenaClock" class="text-2xl font-black font-mono text-amber-300">05:00</div><div id="arenaProgress" class="text-xs text-slate-400">Câu 1/10</div></div></div>
+        <div id="arenaQuestionList" class="space-y-5"></div>
+        <button onclick="finishArenaMatch(false)" class="w-full bg-emerald-600 hover:bg-emerald-500 rounded-xl py-3 font-black text-white">NỘP BÀI & XEM KẾT QUẢ</button>
+        <p class="text-xs text-slate-500">Hết giờ hệ thống sẽ tự nộp bài. Kết quả và LP được lưu trên trình duyệt này.</p>
+      </div>
+      <div id="arenaResult" class="hidden glass p-6 rounded-2xl border border-amber-500/30"></div>
+    </div>
+
+    <!-- SECTION 6: RANKINGS -->
+    <div id="rank" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black text-white">🏆 BẢNG XẾP HẠNG GANK TOÀN MÁY CHỦ MHstudy</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Vinh danh các Cao thủ & Thạch đấu có LP và Điểm số xuất sắc nhất.</p>
+        </div>
+        <button onclick="renderRank()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl transition-all">Làm mới</button>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden border border-slate-800" id="rankbox"></div>
+    </div>
+
+    <!-- SECTION 7: EXAM PAPER TAKING SCREEN -->
+    <div id="exam" class="hidden space-y-6">
+      <!-- TIMER STICKY BAR -->
+      <div class="sticky top-0 z-20 glass p-4 rounded-2xl border border-indigo-500/30 flex items-center justify-between shadow-xl">
+        <div>
+          <h3 id="examname" class="font-bold text-white text-sm md:text-base truncate">Đề thi</h3>
+          <span class="text-[10px] text-indigo-400 font-semibold">MHstudy Exam Engine v3.5</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <div id="clock" class="text-xl md:text-2xl font-black text-indigo-400 font-mono px-3 py-1 rounded-xl bg-slate-900 border border-slate-700">00:00</div>
+          <button onclick="submitExam(false)" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-lg transition-all">
+            NỘP BÀI
+          </button>
+        </div>
+      </div>
+
+      <!-- EXAM PAPER CONTENT -->
+      <div class="glass p-6 md:p-8 rounded-3xl border border-slate-800 space-y-8">
+        <div id="examIdentity"></div>
+        <div id="questions" class="space-y-6"></div>
+        <div class="pt-6 border-t border-slate-800 flex justify-between">
+          <button onclick="switchTab('library')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-5 py-2.5 rounded-xl text-xs">Thoát không nộp</button>
+          <button onclick="submitExam(false)" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs">Nộp Bài & Chấm Điểm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 8: RESULT SCREEN WITH LITERATURE AI GRADING ANALYSIS -->
+    <div id="result" class="hidden space-y-6">
+      <div class="glass p-8 md:p-12 rounded-3xl border border-indigo-500/30 text-center max-w-2xl mx-auto">
+        <span class="text-4xl block mb-2">🎉</span>
+        <h2 class="text-2xl font-black text-white">KẾT QUẢ BÀI THI</h2>
+        <div id="score" class="text-5xl md:text-6xl font-black text-indigo-400 my-4 font-mono">0/10</div>
+        
+        <div id="summary" class="text-xs md:text-sm text-slate-300 space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-left"></div>
+
+        <!-- LITERATURE AI ANALYSIS BOX -->
+        <div id="litAiAnalysisBox" class="hidden mt-6 text-left bg-gradient-to-b from-purple-950/40 to-indigo-950/40 border border-purple-500/30 p-5 rounded-2xl space-y-3">
+          <div class="flex items-center gap-2 border-b border-purple-500/30 pb-2">
+            <span class="text-lg">🤖</span>
+            <h4 class="font-bold text-sm text-purple-300">PHÂN TÍCH CHẤM ĐIỂM AI VĂN HỌC (MHstudy Semantic Engine)</h4>
+          </div>
+          <div id="litAiDetails" class="text-xs text-slate-300 space-y-2"></div>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3 justify-center">
+          <button onclick="showReview()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs">Xem Chi Tiết Đáp Án & Lời Giải</button>
+          <button onclick="switchTab('dashboard')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-2.5 rounded-xl text-xs">Về Trang Chủ MHstudy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 9: REVIEW EXAM SOLUTION -->
+    <div id="review" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-white">XEM LẠI BÀI LÀM VÀ LỜI GIẢI CHI TIẾT</h2>
+        <button onclick="switchTab('dashboard')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs">← Về trang chính</button>
+      </div>
+      <div id="reviewContent" class="glass p-6 md:p-8 rounded-3xl border border-slate-800 space-y-6"></div>
+    </div>
+
+  </main>
+
+  <script>
+    /* ==========================================================================
+       DATASETS (TOÁN, ANH, VĂN, ĐỀ CHÍNH THỨC CẦN THƠ)
+       ========================================================================== */
+    const literatureExams=[{id:1,title:'Đề tham khảo • Ngữ văn tuyển sinh 10 Cần Thơ 2026–2027',tag:'Đề tham khảo',desc:'120 phút • Đọc hiểu 4,0 điểm + Viết 6,0 điểm',poem:`LỜI CHÀO\nNguyễn Khoa Điềm\n\nTa đã đi qua những năm tháng không ngờ\nVô tư quá để bây giờ xao xuyến\nBèo lục bình mênh mang màu mực tím\nNét chữ thiếu thời trôi nhanh như dòng sông...\n\nTa lớn lên bối rối một sắc hồng\nPhượng cứ nở hoài hoài như đếm tuổi\nNhư chiều nay, một buổi chiều dữ dội\nTa nhận ra mình đang lớn khôn...\n\nBiết ơn những cánh sẻ nâu đã bay đến cánh đồng\nRút những cọng rơm vàng về kết tổ\nĐã dạy ta với cánh diều thơ nhỏ\nBiết kéo về cả một sắc trời xanh\nBiết ơn mẹ vẫn tính cho con thêm một tuổi sinh thành\n“Tuổi của mụ” con nằm tròn bụng mẹ\nĐể con quý yêu tháng ngày tuổi trẻ\nBuổi mở mắt chào đời, phút nhắm mắt ra đi...\n\nBiết ơn trò chơi tuổi nhỏ mê li\n“Chuyền chuyền một...” miệng, tay buông bắt\nNgôn ngữ lung linh, quả chuyền thoăn thoắt\nNên một đời tiếng Việt mãi ngân nga...`,
+    questions:[
+      {q:'Câu 1. Xác định thể thơ của đoạn trích.',keywords:['tự do','thơ tự do'],weight:0.75,solution:'Đoạn thơ thuộc thể thơ tự do.'},
+      {q:'Câu 2. Tìm hai từ ngữ, hình ảnh thể hiện cảm xúc của tác giả trong khổ thơ thứ hai.',keywords:['bối rối','sắc hồng','xao xuyến','lớn khôn','chiều dữ dội'],weight:0.75,solution:'Những từ ngữ/hình ảnh: bối rối, sắc hồng, xao xuyến, lớn khôn.'},
+      {q:'Câu 3. Nêu tác dụng của biện pháp điệp từ “biết ơn” trong đoạn trích.',keywords:['nhấn mạnh','lòng biết ơn','điệp từ','tha thiết','xúc động','nuôi dưỡng'],weight:1.25,solution:'Điệp từ “biết ơn” nhấn mạnh tình cảm trân trọng đối với tuổi thơ, thiên nhiên, gia đình và tiếng Việt.'},
+      {q:'Câu 4. Nhận xét về thái độ của tác giả trong hai dòng: “Ta đã đi qua những năm tháng không ngờ / Vô tư quá để bây giờ xao xuyến”.',keywords:['bâng khuâng','xao xuyến','tiếc nuối','trân trọng','tuổi thơ'],weight:1.25,solution:'Tác giả thể hiện thái độ bâng khuâng, bồi hồi, tiếc nuối tuổi thơ đã qua.'}
+    ],
+    written:[
+      {q:'Câu 1. Viết đoạn văn nghị luận khoảng 200 chữ phân tích hình ảnh kí ức tuổi thơ được thể hiện trong đoạn trích.',keywords:['ký ức','tuổi thơ','cánh diều','mẹ','tiếng việt','mực tím','trân trọng','nuôi dưỡng','tâm hồn'],minWords:80,weight:2.0,solution:'Đoạn văn phân tích hình ảnh tuổi thơ qua màu mực tím, cánh diều, trò chơi dân gian và lòng biết ơn mẹ.'},
+      {q:'Câu 2. Làm thế nào để thế hệ trẻ hôm nay không chỉ tự hào mà còn hành động để xứng đáng với lịch sử dân tộc? Em hãy viết bài văn nghị luận.',keywords:['thế hệ trẻ','tự hào','hành động','học tập','trách nhiệm','lịch sử','cống hiến','đạo đức','đất nước'],minWords:120,weight:4.0,solution:'Bài văn giải thích mối quan hệ giữa lòng tự hào và hành động thực tế của thế hệ trẻ.'}
+    ]}];
+
+    const mathExams=[
+      {"id":1,"title":"Đề 01 • Khởi động đại số","type":"easy","tag":"Cơ bản","desc":"20 trắc nghiệm + 2 Đúng/Sai + 3 trả lời ngắn • 90 phút","questions":[{"q":"Cho hàm số y=-2x². Giá trị của y khi x=-3 là","o":["-18","18","-6","6"],"a":0},{"q":"Phương trình x²-7x+12=0 có nghiệm là","o":["3 và 4","-3 và -4","2 và 6","1 và 12"],"a":0},{"q":"Hệ phương trình x+y=11, 2x-y=4 có nghiệm","o":["(5;6)","(6;5)","(4;7)","(7;4)"],"a":0},{"q":"Rút gọn √50 bằng","o":["5√2","10√2","25√2","√25"],"a":0},{"q":"Đường thẳng y=-3x+5 cắt trục tung tại điểm","o":["(0;5)","(5;0)","(0;-3)","(-3;0)"],"a":0},{"q":"Một tam giác vuông có hai cạnh góc vuông 9 và 12. Cạnh huyền bằng","o":["15","18","21","13"],"a":0},{"q":"Điều kiện xác định của √(2x-6) là","o":["x≥3","x≤3","x>3","x<3"],"a":0},{"q":"Nếu hai nghiệm của x²-5x+6=0 là x1,x2 thì x1+x2 bằng","o":["5","-5","6","-6"],"a":0},{"q":"Diện tích hình tròn bán kính 5 cm, lấy π=3,14 là","o":["78,5","31,4","157","25"],"a":0},{"q":"Tọa độ giao điểm của y=x+2 và y=4 là","o":["(2;4)","(4;2)","(-2;4)","(2;-4)"],"a":0},{"q":"Một số tăng từ 80 lên 100. Tỉ lệ tăng là","o":["25%","20%","30%","12,5%"],"a":0},{"q":"Giá trị của (√3-1)(√3+1) là","o":["2","3","1","4"],"a":0},{"q":"Nếu a,b là hai nghiệm của 2x²-3x-2=0 thì ab bằng","o":["-1","1","-2","2"],"a":0},{"q":"Đường tròn có đường kính 14 cm thì chu vi là","o":["14π cm","7π cm","28π cm","49π cm"],"a":0},{"q":"Parabol y=x² có điểm nào thuộc đồ thị","o":["(-2;4)","(2;2)","(-1;2)","(3;6)"],"a":0},{"q":"Giải bất phương trình 3x-5≤7 được","o":["x≤4","x≥4","x≤2/3","x≥2/3"],"a":0},{"q":"Hai tiếp tuyến từ M đến đường tròn có","o":["độ dài bằng nhau","độ dài luôn khác nhau","tổng bằng bán kính","tích bằng bán kính"],"a":0},{"q":"Một hình chữ nhật có chu vi 30 cm, chiều dài 9 cm. Chiều rộng là","o":["6","5","7","12"],"a":0},{"q":"Nếu tan α=3/4 với α nhọn thì sin α bằng","o":["3/5","4/5","3/4","4/3"],"a":0},{"q":"Phương trình 4x²-9=0 có nghiệm","o":["±3/2","3/2","±9/4","±2/3"],"a":0}],"tf":[{"q":"Cho A=(x−3)².","items":["A=x²−6x+9","A luôn không âm","A(3)=0","A(0)=9"],"a":[1,1,1,1]},{"q":"Trong tam giác vuông ABC tại A.","items":["BC là cạnh huyền","AB²+AC²=BC²","Hai góc B,C phụ nhau","AB=AC luôn đúng"],"a":[1,1,1,0]}],"short":[{"q":"Tính √144−5.","a":"7"},{"q":"Tam giác vuông có hai cạnh 9 và 40. Cạnh huyền?","a":"41"},{"q":"Giải 2x+5=17.","a":"6"}]}
+    ];
+
+    const englishExams=[
+      {"id":1,"title":"Đề 01 • Daily Life & School","level":"easy","desc":"60 phút • 28 câu trắc nghiệm (7,0 điểm) + 12 câu tự luận (3,0 điểm)","questions":[{"q":"The school library ______ many useful books for students.","o":["provides","providing","provide","provided"],"a":0},{"q":"My sister usually goes to school ______ bicycle.","o":["in","by","on","at"],"a":1},{"q":"When I arrived, they ______ dinner.","o":["have","had","were having","are having"],"a":2},{"q":"This exercise is ______ than the previous one.","o":["easy","easier","easiest","as easy"],"a":1},{"q":"If you study hard, you ______ good results.","o":["get","got","will get","would get"],"a":2},{"q":"The student ______ won the prize is my best friend.","o":["which","whose","who","whom"],"a":2},{"q":"Please ______ the lights before leaving the room.","o":["turn off","turn on","look after","take after"],"a":0},{"q":"We should ______ plastic waste to protect the environment.","o":["increase","reduce","borrow","invite"],"a":1},{"q":"Although it was raining, they ______ playing football.","o":["continued","continue","continues","had continued"],"a":0},{"q":"Mai: “Would you like some orange juice?” Nam: “______”","o":["Yes, please.","Never mind.","That’s all right.","I’m sorry to hear that."],"a":0},{"q":"Lan: “Congratulations on your success!” Hoa: “______”","o":["You’re welcome.","Thanks a lot.","Not at all.","No, thanks."],"a":1},{"q":"NOTICE: KEEP SILENCE IN THE LIBRARY.","o":["You must be quiet in the library.","You may sing in the library.","The library is closed.","Books are not allowed."],"a":0},{"q":"BUS TO SCHOOL: First bus 6:30 a.m. Last bus 7:30 a.m.","o":["The first school bus leaves at 6:30.","The last bus leaves at 6:30.","Buses run all night.","Students must walk."],"a":0},{"q":"a. I joined a reading club last month. b. It has helped me make new friends. c. We meet every Saturday morning.","o":["a-c-b","b-a-c","c-a-b","a-b-c"],"a":0},{"q":"a. We collected old clothes. b. The storm damaged many houses. c. We gave the clothes to families in need.","o":["b-a-c","a-b-c","c-a-b","b-c-a"],"a":0},{"q":"“I will visit the museum tomorrow,” Minh said.","o":["Minh said that he would visit the museum the next day.","Minh said that I would visit the museum tomorrow.","Minh says he visited the museum.","Minh said he will visit the museum yesterday."],"a":0},{"q":"The girl is my cousin. She won the scholarship.","o":["The girl who won the scholarship is my cousin.","The girl which won the scholarship is my cousin.","The girl whom won the scholarship is my cousin.","The girl winning it are my cousin."],"a":0},{"q":"Joining a sports club is a good way (18) _____ healthy.","o":["to stay","staying","stayed","stay"],"a":0},{"q":"Our club meets twice a week, (19) _____ Tuesday and Thursday.","o":["but","and","or","so"],"a":1},{"q":"The activities begin (20) _____ 4 p.m.","o":["in","on","at","for"],"a":2},{"q":"All students (21) _____ welcome to join us.","o":["is","are","was","be"],"a":1},{"q":"Let’s stay (22) _____ and enjoy the activities!","o":["active","actively","activity","act"],"a":0},{"q":"What is the passage mainly about?","o":["A volunteer trip to a village","A school football match","A family holiday","A trip to a big city"],"a":0},{"q":"The word “worried” is closest in meaning to ______.","o":["happy","anxious","bored","excited"],"a":1},{"q":"What did the team do at the school?","o":["Painted the walls","Built a new classroom","Sold books","Taught mathematics"],"a":0},{"q":"Why did the writer become close to the team?","o":["They worked together.","They lived together for years.","They studied at the same school.","They played games all day."],"a":0},{"q":"Which statement is NOT TRUE?","o":["The trip lasted three days.","The children received books.","The writer returned home proud.","The team refused to help the school."],"a":3},{"q":"How did the writer feel at the end?","o":["Tired but proud","Angry and bored","Sad and lonely","Afraid and confused"],"a":0}],"reading":"Last summer, I joined a three-day volunteer trip to a small village...","written":{"word":[{"q":"Linh answered the question ______ and everyone understood her. (CLEAR)","a":"clearly"},{"q":"Tourism contributes to the ______ of many local communities. (DEVELOP)","a":"development"},{"q":"We should protect rivers from ______. (POLLUTE)","a":"pollution"},{"q":"The documentary was very ______, so I watched it twice. (INTEREST)","a":"interesting"}],"rewrite":[{"q":"We stayed at home because it was raining.","a":"Because it was raining, we stayed at home."},{"q":"I do not have enough money, so I cannot buy the laptop.","a":"I wish I had enough money to buy the laptop."},{"q":"Study hard or you will fail the exam.","a":"If you do not study hard, you will fail the exam."},{"q":"“Where do you live?” she asked me.","a":"She asked me where I lived."}],"sentence":[{"q":"Last summer / Mai / visit / her grandparents / in the Mekong Delta","a":"Last summer, Mai visited her grandparents in the Mekong Delta."},{"q":"Doing exercise / be / a good way / stay healthy","a":"Doing exercise is a good way to stay healthy."},{"q":"I / want / join / the English club / because / I love speaking English","a":"I want to join the English club because I love speaking English."},{"q":"The woman / live / next door / often / help / local children","a":"The woman who lives next door often helps local children."}]}}
+    ];
+
+    const officialExams=[{id:1,title:'Đề chính thức tuyển sinh lớp 10 Cần Thơ 2026–2027',tag:'Đề chính thức',desc:'20 câu trắc nghiệm + 8 ý đúng/sai + 4 câu tự luận • 120 phút',questions:[
+      {q:'Hàm số y = (1/4)x² có đồ thị là hình vẽ nào? Chọn mô tả đúng.',o:['Parabol có đỉnh O, trục Oy, mở lên','Parabol có đỉnh O, trục Oy, mở xuống','Đường thẳng đi qua gốc tọa độ','Đường tròn tâm O'],a:0},
+      {q:'Phương trình nào là phương trình bậc nhất hai ẩn?',o:['3x² − 2y = 2','2x + y = 1','2xy + 3y = −11','5x − 2√y = 4'],a:1},
+      {q:'Nghiệm của phương trình x² − 9x + 8 = 0 là',o:['x = 1 và x = 8','x = −1 và x = −8','x = −1 và x = 8','x = 1 và x = −8'],a:0},
+      {q:'Cho a > b. Khẳng định nào đúng?',o:['5 − 4a > 5 − 4b','3a − 4 < 3b − 4','2a + 1 > 2b + 1','a − 4 < b − 4'],a:2},
+      {q:'Đường tròn bán kính 12 cm, độ dài cung 60° là',o:['48π cm','36π cm','4π cm','2π cm'],a:2}
+    ],tf:[{q:'Câu 21. Biểu đồ học sinh',items:['Số học sinh khối 7 và 8 bằng nhau.','Số học sinh khối 6 là 250.','Số khối 7 nhiều hơn khối 9 là 100.','Có 5 lớp 9 nếu mỗi lớp 40 học sinh.'],a:[1,0,0,1]}],short:[],written:[]}];
+
+    // STORE REWARDS DATA (FILE DỀ, SÁCH, TÀI LIỆU)
+    const storeRewards = [
+      { id:'campbell', title:'Campbell Biology – tài liệu tham khảo', type:'Sách giáo khoa • Trang nhà xuất bản', cost:16, desc:'Tài liệu sinh học chuyên sâu. Mở trang nhà xuất bản/nhà cung cấp hợp pháp; không cung cấp bản scan trái phép.', url:'https://www.pearson.com/en-us/subject-catalog/p/campbell-biology/P200000006281' },
+      { id:'bio-open', title:'Sinh học đại cương – OpenStax Biology 2e', type:'Sách mở • Đọc trực tuyến', cost:10, desc:'Giáo trình sinh học mở với các chương về tế bào, di truyền, tiến hóa và sinh thái.', url:'https://openstax.org/details/books/biology-2e' },
+      { id:'bio-study', title:'Ôn tập Sinh học – Khan Academy', type:'Bài học trực tuyến', cost:10, desc:'Video và bài luyện tập sinh học theo chủ đề.', url:'https://www.khanacademy.org/science/biology' },
+      { id:'math-open', title:'Ôn tập Toán – Khan Academy', type:'Bài học trực tuyến', cost:1, desc:'Bài học và bài tập đại số, hình học và các chủ đề toán học.', url:'https://www.khanacademy.org/math' },
+      { id:'english-open', title:'Ôn tập Tiếng Anh – British Council', type:'Bài học trực tuyến', cost:1, desc:'Luyện ngữ pháp, từ vựng, đọc và nghe theo cấp độ.', url:'https://learnenglish.britishcouncil.org/' },
+      { id:'literature-open', title:'Tra cứu văn bản – Wikisource tiếng Việt', type:'Thư viện văn bản', cost:1, desc:'Tham khảo các tác phẩm và văn bản thuộc phạm vi chia sẻ hợp pháp.', url:'https://vi.wikisource.org/' },
+      { id:'science-open', title:'Khoa học tự nhiên – CK-12', type:'Thư viện học liệu mở', cost:1, desc:'Bài đọc và học liệu khoa học để củng cố kiến thức nền.', url:'https://www.ck12.org/student/' },
+      { id:'exam-pack', title:'Bộ tài liệu tự ôn tuyển sinh 10', type:'Trang học liệu trực tuyến', cost:10, desc:'Nguồn học liệu tham khảo để tự ôn luyện các môn.', url:'https://www.khanacademy.org/' }
+    ];
+
+    /* ==========================================================================
+       GLOBAL STATE & LOCALSTORAGE LOGIC
+       ========================================================================== */
+    let student = { name: '', sbd: '', badges: 0, lp: 0, wins: 0, totalExams: 0 };
+    let customExams = [], customExamId = 0;
+    let subject = 'math', current = null, remain = 0, timer = null, lastResult = null;
+
+    function saveStudent() {
+      student.name = document.getElementById('name').value.trim();
+      student.sbd = document.getElementById('sbd').value.trim();
+      localStorage.setItem('mh_student', JSON.stringify(student));
+      updateUIHeader();
+    }
+
+    function loadStudent() {
+      try {
+        const data = localStorage.getItem('mh_student');
+        if (data) student = JSON.parse(data);
+      } catch(e) {}
+      if (student.name) document.getElementById('name').value = student.name;
+      if (student.sbd) document.getElementById('sbd').value = student.sbd;
+      updateUIHeader();
+    }
+
+    function updateUIHeader() {
+      const nameStr = student.name || 'Chưa đăng nhập';
+      const sbdStr = student.sbd ? 'SBD: ' + student.sbd : 'Chưa có SBD';
+      document.getElementById('sideName').textContent = nameStr;
+      document.getElementById('sideSBD').textContent = sbdStr;
+      document.getElementById('sideAvatar').textContent = student.name ? student.name.substring(0,2).toUpperCase() : 'MH';
+
+      document.getElementById('dashName').textContent = nameStr;
+      document.getElementById('dashSbd').textContent = sbdStr;
+      document.getElementById('dashBadgeCount').textContent = (student.badges || 0) + ' Huy hiệu';
+      document.getElementById('badgeCountPill').textContent = (student.badges || 0) + ' Badge';
+      document.getElementById('storeBadgeCount').textContent = (student.badges || 0) + ' 🎖️';
+
+      // Update Rank UI
+      const gankInfo = getGankRank(student.lp || 0);
+      document.getElementById('dashGankRank').textContent = gankInfo.name.toUpperCase();
+      document.getElementById('gankRankPill').textContent = gankInfo.name;
+      document.getElementById('dashLpText').textContent = (student.lp || 0) + ' LP (Hạng: ' + gankInfo.name + ')';
+      
+      const pct = Math.min(100, Math.max(5, ((student.lp || 0) % 100)));
+      document.getElementById('dashLpBar').style.width = pct + '%';
+
+      document.getElementById('gankRankTitle').textContent = gankInfo.name.toUpperCase();
+      document.getElementById('gankLpVal').textContent = (student.lp || 0) + ' LP';
+      document.getElementById('gankIcon').textContent = gankInfo.icon;
+      document.getElementById('gankBadgeText').textContent = gankInfo.name;
+      document.getElementById('gankBadgeGlow').className = 'w-40 h-40 rounded-full border-4 flex flex-col items-center justify-center shadow-2xl transform hover:scale-105 transition-all ' + gankInfo.bg;
+      
+      const rate = student.totalExams > 0 ? Math.round((student.wins / student.totalExams) * 100) : 100;
+      document.getElementById('gankWinRate').textContent = rate + '%';
+    }
+
+    function getGankRank(lp) {
+      if (lp >= 700) return { name: 'Thạch Đấu', icon: '🔥', bg: 'bg-gradient-to-tr from-pink-900 to-rose-600 border-pink-400 neon-glow-red' };
+      if (lp >= 500) return { name: 'Cao Thủ', icon: '👑', bg: 'bg-gradient-to-tr from-purple-900 to-indigo-600 border-purple-400 neon-glow-purple' };
+      if (lp >= 400) return { name: 'Kim Cương', icon: '🔷', bg: 'bg-gradient-to-tr from-blue-900 to-cyan-600 border-blue-400' };
+      if (lp >= 300) return { name: 'Bạch Kim', icon: '💎', bg: 'bg-gradient-to-tr from-cyan-900 to-teal-600 border-cyan-400' };
+      if (lp >= 200) return { name: 'Vàng', icon: '🥇', bg: 'bg-gradient-to-tr from-amber-800 to-yellow-500 border-yellow-300' };
+      if (lp >= 100) return { name: 'Bạc', icon: '🥈', bg: 'bg-gradient-to-tr from-slate-700 to-slate-400 border-slate-200' };
+      return { name: 'Đồng', icon: '🥉', bg: 'bg-gradient-to-tr from-amber-950 to-amber-800 border-amber-600' };
+    }
+
+    function enterSystem() {
+      if (!document.getElementById('name').value.trim() || !document.getElementById('sbd').value.trim()) {
+        alert('Vui lòng nhập Họ tên và Số báo danh.');
+        return;
+      }
+      saveStudent();
+      switchTab('dashboard');
+    }
+
+    /* ==========================================================================
+       NAVIGATION & TABS
+       ========================================================================== */
+    function switchTab(tabId) {
+      clearInterval(timer);
+      ['login', 'dashboard', 'library', 'badges', 'gank', 'rank', 'studygroup', 'arena', 'exam', 'result', 'review'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+
+      // Active state styling for nav buttons
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-slate-800/80', 'text-white'));
+
+      if (tabId === 'badges') renderStore();
+      if (tabId === 'rank') renderRank();
+      if (tabId === 'arena') renderArenaSummary();
+    }
+
+    function openSubject(s) {
+      subject = s;
+      switchTab('library');
+      let titles = {
+        math: 'KHO 12 ĐỀ TOÁN TUYỂN SINH 10',
+        english: 'KHO 12 ĐỀ TIẾNG ANH TUYỂN SINH 10',
+        literature: 'KHO ĐỀ NGỮ VĂN - AI AUTO-GRADING',
+        official: 'ĐỀ CHÍNH THỨC TOÁN CẦN THƠ 2026–2027',
+        custom: 'ĐỀ TỰ TẠO TỪ ĐỀ CƯƠNG'
+      };
+      document.getElementById('libraryTitle').textContent = titles[s];
+      let data = s === 'math' ? mathExams : s === 'english' ? englishExams : s === 'literature' ? literatureExams : s === 'official' ? officialExams : customExams;
+      
+      document.getElementById('examGrid').innerHTML = data.map((e, i) => `
+        <div class="glass-card p-5 rounded-2xl border border-slate-700/60 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-white text-base mb-2">${esc(e.title)}</h3>
+            <p class="text-xs text-slate-400 mb-4">${esc(e.desc || '')}</p>
+          </div>
+          <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+            <span class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">Đề ${i+1}</span>
+            <button onclick="startExam(${e.id})" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all">Làm đề →</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* ==========================================================================
+       AUTO-GRADING AI ENGINE FOR LITERATURE (NGỮ VĂN)
+       ========================================================================== */
+    function evaluateLiteratureAI(userAnswers, exam) {
+      let totalScore = 0;
+      let hitKeywords = [];
+      let missingKeywords = [];
+      let feedback = [];
+
+      // 1. Chấm phần Đọc hiểu (questions)
+      exam.questions.forEach((q, idx) => {
+        const uText = (userAnswers.q[idx] || '').toLowerCase();
+        let qScore = 0;
+        let matched = [];
+
+        q.keywords.forEach(kw => {
+          if (uText.includes(kw.toLowerCase())) {
+            matched.push(kw);
+            if (!hitKeywords.includes(kw)) hitKeywords.push(kw);
+          } else {
+            if (!missingKeywords.includes(kw)) missingKeywords.push(kw);
+          }
+        });
+
+        const ratio = q.keywords.length > 0 ? matched.length / q.keywords.length : 0;
+        if (ratio >= 0.8) qScore = q.weight;
+        else if (ratio >= 0.4) qScore = q.weight * 0.6;
+        else if (uText.length > 10) qScore = q.weight * 0.3;
+
+        totalScore += qScore;
+      });
+
+      // 2. Chấm phần Viết (written)
+      exam.written.forEach((q, idx) => {
+        const uText = (userAnswers.w[idx] || '').toLowerCase();
+        const wordCount = uText.trim().split(/\s+/).filter(Boolean).length;
+        let wScore = 0;
+        let matched = [];
+
+        q.keywords.forEach(kw => {
+          if (uText.includes(kw.toLowerCase())) {
+            matched.push(kw);
+            if (!hitKeywords.includes(kw)) hitKeywords.push(kw);
+          } else {
+            if (!missingKeywords.includes(kw)) missingKeywords.push(kw);
+          }
+        });
+
+        // Dung lượng & Từ khóa
+        const kwRatio = q.keywords.length > 0 ? matched.length / q.keywords.length : 0;
+        const lengthRatio = Math.min(1, wordCount / (q.minWords || 100));
+
+        wScore = q.weight * (kwRatio * 0.6 + lengthRatio * 0.4);
+
+        if (wordCount < 20) {
+          wScore = wScore * 0.3;
+          feedback.push(`Bài viết ${idx+1} quá ngắn (${wordCount} từ). Cần khai triển dài hơn.`);
+        } else if (kwRatio >= 0.7) {
+          feedback.push(`Bài viết ${idx+1} lập luận tốt, đủ ý trọng tâm, vốn từ phong phú.`);
+        } else {
+          feedback.push(`Bài viết ${idx+1} đạt ${wordCount} từ nhưng còn thiếu một số ý chính.`);
+        }
+
+        totalScore += wScore;
+      });
+
+      totalScore = Math.min(10, Math.round(totalScore * 10) / 10);
+
+      return {
+        score: totalScore,
+        hitKeywords: hitKeywords,
+        missingKeywords: missingKeywords.slice(0, 6),
+        feedback: feedback
+      };
+    }
+
+    /* ==========================================================================
+       EXAM ENGINE & OMR RENDER
+       ========================================================================== */
+    function startExam(id) {
+      current = (subject==='math'?mathExams:subject==='english'?englishExams:subject==='literature'?literatureExams:subject==='official'?officialExams:customExams).find(e=>e.id===id);
+      switchTab('exam');
+      document.getElementById('examname').textContent = current.title;
+      renderExamIdentity();
+      renderQuestions();
+
+      remain = subject==='math'?5400:subject==='english'?3600:subject==='official'?7200:subject==='custom'?5400:7200;
+      clearInterval(timer);
+      tick();
+      timer = setInterval(tick, 1000);
+      window.scrollTo(0,0);
+    }
+
+    function tick() {
+      let m = Math.floor(remain / 60), s = remain % 60;
+      document.getElementById('clock').textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      if (remain <= 0) {
+        clearInterval(timer);
+        submitExam(true);
+        return;
+      }
+      remain--;
+    }
+
+    function renderExamIdentity() {
+      const code = String(current.id || 1).padStart(3, '0').slice(-3);
+      document.getElementById('examIdentity').innerHTML = `
+        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col sm:flex-row justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">PHIẾU THÔNG TIN THÍ SINH</span>
+            <div class="text-base font-black text-white mt-1">${esc(student.name || 'Thí sinh')}</div>
+            <div class="text-xs text-slate-400">SBD: ${esc(student.sbd || '100001')}</div>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-widest">MÃ ĐỀ THI</span>
+            <div class="text-lg font-black text-amber-300 font-mono">${code}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderQuestions() {
+      let h = '';
+      if (subject === 'literature') {
+        h += `<div class="bg-slate-900/90 p-5 rounded-2xl border border-indigo-500/20 text-xs text-slate-200 leading-relaxed font-serif whitespace-pre-line mb-6">${esc(current.poem)}</div>`;
+        current.questions.forEach((q, i) => {
+          h += `<div class="space-y-2"><h4 class="font-bold text-sm text-white">${esc(q.q)}</h4><textarea id="lq${i}" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white outline-none focus:border-indigo-500" placeholder="Nhập câu trả lời đọc hiểu..."></textarea></div>`;
+        });
+        h += '<div class="pt-4 border-t border-slate-800 space-y-4"><h3 class="font-bold text-base text-pink-400">PHẦN VIẾT NGHỊ LUẬN</h3>';
+        current.written.forEach((q, i) => {
+          h += `<div class="space-y-2"><h4 class="font-bold text-sm text-white">${esc(q.q)}</h4><textarea id="lw${i}" rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white outline-none focus:border-indigo-500" placeholder="Viết đoạn/bài văn nghị luận của em..."></textarea></div>`;
+        });
+        h += '</div>';
+      } else if (subject === 'custom') {
+        h += `<div class="rounded-xl border border-indigo-500/30 bg-indigo-950/20 p-4 text-xs text-slate-300"><b class="text-indigo-300">Nguồn tạo đề:</b> ${esc(current.sourceName)}<br><b class="text-indigo-300">Trích nội dung:</b> ${esc(current.sourcePreview || '')}</div>`;
+        h += '<section class="space-y-4"><h3 class="text-base font-black text-indigo-300">PHẦN I — 12 CÂU TRẮC NGHIỆM</h3>';
+        current.questions.forEach((q, i) => {
+          h += `<div class="space-y-2"><h4 class="font-bold text-sm text-white">Câu ${i+1}. ${esc(q.q)}</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`;
+          q.o.forEach((o, j) => h += `<label class="flex items-start gap-2 p-3 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 cursor-pointer text-xs text-slate-200"><input type="radio" name="m${i}" value="${j}" class="accent-indigo-500 mt-0.5"> <span>${String.fromCharCode(65+j)}. ${esc(o)}</span></label>`);
+          h += '</div></div>';
+        });
+        h += '</section><section class="space-y-4 border-t border-slate-800 pt-5"><h3 class="text-base font-black text-emerald-300">PHẦN II — 4 CÂU ĐÚNG / SAI</h3><p class="text-xs text-slate-400">Với mỗi nhận định, chọn Đúng hoặc Sai theo nội dung tài liệu.</p>';
+        current.tf.forEach((q, qi) => {
+          h += `<div class="rounded-xl bg-slate-900/50 border border-slate-800 p-4 space-y-3"><h4 class="font-bold text-sm text-white">Câu ${qi+13}. ${esc(q.q)}</h4>`;
+          q.items.forEach((item, ii) => h += `<div class="space-y-2"><p class="text-xs text-slate-200">${String.fromCharCode(97+ii)}) ${esc(item.text)}</p><div class="flex gap-4 text-xs text-slate-300"><label class="flex items-center gap-1"><input type="radio" name="tf${qi}_${ii}" value="true" class="accent-emerald-500"> Đúng</label><label class="flex items-center gap-1"><input type="radio" name="tf${qi}_${ii}" value="false" class="accent-rose-500"> Sai</label></div></div>`);
+          h += '</div>';
+        });
+        h += '</section><section class="space-y-4 border-t border-slate-800 pt-5"><h3 class="text-base font-black text-amber-300">PHẦN III — TỰ LUẬN</h3><p class="text-xs text-slate-400">Trả lời dựa trên tài liệu đã tải lên. Phần này chưa được chấm tự động.</p>';
+        current.written.forEach((q, i) => h += `<div class="space-y-2"><h4 class="font-bold text-sm text-white">Câu ${i+17}. ${esc(q.q)}</h4><textarea id="cw${i}" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white outline-none focus:border-indigo-500" placeholder="Viết câu trả lời của em..."></textarea></div>`);
+        h += '</section>';
+      } else {
+        current.questions.forEach((q, i) => {
+          h += `<div class="space-y-2"><h4 class="font-bold text-sm text-white">Câu ${i+1}. ${esc(q.q)}</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`;
+          q.o.forEach((o, j) => h += `<label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 cursor-pointer text-xs text-slate-200"><input type="radio" name="m${i}" value="${j}" class="accent-indigo-500"> ${String.fromCharCode(65+j)}. ${esc(o)}</label>`);
+          h += '</div></div>';
+        });
+      }
+      document.getElementById('questions').innerHTML = h;
+    }
+
+    /* ==========================================================================
+       SUBMIT EXAM & REWARD / GANK LP CALCULATION
+       ========================================================================== */
+    function submitExam(auto) {
+      if (!auto && !confirm('Bạn chắc chắn muốn nộp bài thi?')) return;
+      clearInterval(timer);
+
+      let finalScore = 0;
+      let summaryText = '';
+      let isLiterature = subject === 'literature';
+
+      if (isLiterature) {
+        const answers = {
+          q: current.questions.map((_, i) => document.getElementById('lq' + i)?.value || ''),
+          w: current.written.map((_, i) => document.getElementById('lw' + i)?.value || '')
+        };
+        const evalRes = evaluateLiteratureAI(answers, current);
+        finalScore = evalRes.score;
+
+        summaryText = `Đã chấm bài thi Ngữ Văn thành công qua AI semantic engine.`;
+        
+        document.getElementById('litAiAnalysisBox').classList.remove('hidden');
+        document.getElementById('litAiDetails').innerHTML = `
+          <p><strong>Ưu điểm & Nhận xét:</strong> ${evalRes.feedback.join(' ')}</p>
+          <p><strong>Từ khóa đã chạm:</strong> <span class="text-emerald-400">${evalRes.hitKeywords.join(', ') || 'Chưa chạm từ khóa chuẩn'}</span></p>
+          <p><strong>Ý quan trọng cần bổ sung:</strong> <span class="text-amber-400">${evalRes.missingKeywords.join(', ') || 'Đã đầy đủ'}</span></p>
+        `;
+      } else {
+        document.getElementById('litAiAnalysisBox').classList.add('hidden');
+        let mcCorrect = 0;
+        current.questions.forEach((q, i) => {
+          const sel = document.querySelector(`input[name=m${i}]:checked`);
+          if (sel && +sel.value === q.a) mcCorrect++;
+        });
+        if (subject === 'custom') {
+          let tfCorrect = 0, tfTotal = 0, essayAnswered = 0;
+          current.tf.forEach((q, qi) => q.items.forEach((item, ii) => {
+            tfTotal++;
+            const sel = document.querySelector(`input[name="tf${qi}_${ii}"]:checked`);
+            if (sel && (sel.value === 'true') === item.answer) tfCorrect++;
+          }));
+          current.written.forEach((q, i) => { if ((document.getElementById('cw'+i)?.value || '').trim().length >= 20) essayAnswered++; });
+          const mcPart = current.questions.length ? (mcCorrect / current.questions.length) * 6 : 0;
+          const tfPart = tfTotal ? (tfCorrect / tfTotal) * 4 : 0;
+          finalScore = Math.round((mcPart + tfPart) * 10) / 10;
+          summaryText = `Trắc nghiệm: ${mcCorrect}/12 đúng (tối đa 6 điểm).<br>Đúng/Sai: ${tfCorrect}/${tfTotal} nhận định đúng (tối đa 4 điểm).<br>Tự luận: đã nhập ${essayAnswered}/${current.written.length} câu; phần này chưa cộng điểm tự động, cần được xem xét riêng.`;
+        } else {
+          finalScore = Math.round((mcCorrect / current.questions.length) * 10 * 10) / 10;
+          summaryText = `Số câu trắc nghiệm đúng: ${mcCorrect}/${current.questions.length} câu.`;
+        }
+      }
+
+      // REWARD SYSTEM (BADGES) LOGIC
+      let earnedBadges = 0;
+      if (finalScore >= 10) earnedBadges = 2;
+      else if (finalScore >= 9.0) earnedBadges = 1;
+
+      if (earnedBadges > 0) {
+        student.badges = (student.badges || 0) + earnedBadges;
+        summaryText += `<br><span class="text-amber-400 font-bold">🎉 Bạn nhận được +${earnedBadges} Huy hiệu thưởng!</span>`;
+      }
+
+      // GANK ELO LP LOGIC
+      let gainedLp = 0;
+      if (finalScore >= 9.0) gainedLp = 25;
+      else if (finalScore >= 8.0) gainedLp = 15;
+      else if (finalScore >= 5.0) gainedLp = 5;
+
+      student.lp = (student.lp || 0) + gainedLp;
+      student.totalExams = (student.totalExams || 0) + 1;
+      if (finalScore >= 8.0) student.wins = (student.wins || 0) + 1;
+
+      saveStudent();
+
+      // RECORD TO SERVER RANKINGS
+      let rankArr = JSON.parse(localStorage.getItem('mh_rankings') || '[]');
+      rankArr.push({
+        name: student.name || 'Thí sinh',
+        sbd: student.sbd || '100001',
+        subject: isLiterature ? 'Ngữ Văn' : 'Toán/Anh',
+        score: finalScore,
+        lp: student.lp,
+        time: Date.now()
+      });
+      rankArr.sort((a,b) => b.lp - a.lp || b.score - a.score);
+      localStorage.setItem('mh_rankings', JSON.stringify(rankArr.slice(0, 50)));
+
+      // SHOW RESULT UI
+      switchTab('result');
+      document.getElementById('score').textContent = finalScore.toFixed(1) + '/10';
+      document.getElementById('summary').innerHTML = `
+        <div class="font-bold text-white text-base mb-1">${esc(current.title)}</div>
+        <div>${summaryText}</div>
+        <div class="text-xs text-indigo-400 mt-2 font-semibold">+${gainedLp} LP Gank Elo đã được cộng vào tài khoản của bạn!</div>
+      `;
+    }
+
+    /* ==========================================================================
+       STORE REWARDS (FILE SÁCH & ĐỀ THI)
+       ========================================================================== */
+    function getUnlockedResources() {
+      try { return JSON.parse(localStorage.getItem('mh_unlocked_resources') || '[]'); } catch(e) { return []; }
+    }
+
+    function renderStore() {
+      document.getElementById('storeBadgeCount').textContent = (student.badges || 0) + ' 🎖️';
+      const unlocked = getUnlockedResources();
+      document.getElementById('rewardStoreGrid').innerHTML = storeRewards.map(r => {
+        const isOpen = unlocked.includes(r.id);
+        return `<div class="glass-card p-6 rounded-2xl border ${r.id==='campbell'?'border-amber-400/50':'border-slate-800'} flex flex-col justify-between">
+          <div><span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">${r.type}</span>
+          <h3 class="font-bold text-white text-lg mt-3">${esc(r.title)}</h3><p class="text-xs text-slate-400 mt-2">${esc(r.desc)}</p>
+          ${isOpen ? `<a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer" class="inline-flex mt-4 text-xs font-bold text-cyan-300 underline">📖 Đọc tài liệu trên web ↗</a>` : ''}</div>
+          <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between gap-2"><span class="text-sm font-black text-amber-300">${r.cost} Huy hiệu</span>
+          ${isOpen ? '<span class="text-xs font-bold text-emerald-400">✓ Đã mở khóa</span>' : `<button onclick="redeemReward('${r.id}')" class="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black text-xs px-4 py-2 rounded-xl">Mở khóa</button>`}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function redeemReward(id) {
+      const resource = storeRewards.find(r => r.id === id);
+      if (!resource) return;
+      const unlocked = getUnlockedResources();
+      if (unlocked.includes(id)) { window.open(resource.url, '_blank', 'noopener'); return; }
+      if ((student.badges || 0) < resource.cost) { alert('Bạn chưa đủ Huy hiệu.'); return; }
+      if (!confirm(`Dùng ${resource.cost} huy hiệu để mở khóa “${resource.title}”?`)) return;
+      student.badges -= resource.cost;
+      unlocked.push(id);
+      localStorage.setItem('mh_unlocked_resources', JSON.stringify(unlocked));
+      saveStudent();
+      renderStore();
+    }
+
+    function renderStudyChat() {
+      let messages = [];
+      try { messages = JSON.parse(localStorage.getItem('mh_chat_messages') || '[]'); } catch(e) {}
+      const box = document.getElementById('chatMessages');
+      if (!box) return;
+      box.innerHTML = messages.length ? messages.map(m => `<div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+        <div class="flex justify-between gap-2"><strong class="text-xs text-cyan-300">${esc(m.name)}</strong><span class="text-[10px] text-slate-500">${new Date(m.time).toLocaleString('vi-VN')}</span></div>
+        <p class="text-sm text-slate-200 mt-2 whitespace-pre-wrap break-words">${esc(m.text)}</p></div>`).join('') : '<p class="text-xs text-slate-500 text-center py-12">Chưa có bài đăng. Hãy mở đầu cuộc thảo luận nhé!</p>';
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function submitStudyPost(event) {
+      event.preventDefault();
+      const input = document.getElementById('chatText'), fileInput = document.getElementById('chatMedia');
+      const status = document.getElementById('chatModerationStatus'), value = input.value.trim(), file = fileInput.files[0];
+      const blocked = /(?:đồ ngu|địt|đụ|cặc|lồn|đéo|fuck|shit|porn|xxx|khiêu dâm|máu me|giết người)/i;
+      if (!value && !file) { status.textContent = 'Hãy nhập câu hỏi trước khi gửi.'; return; }
+      if (blocked.test(value)) { status.textContent = 'Bài đăng bị chặn vì có từ ngữ không phù hợp.'; return; }
+      if (file) { status.textContent = 'Tệp ảnh/video đã bị từ chối: bản demo chưa có công cụ kiểm duyệt hình ảnh/video an toàn.'; return; }
+      let messages = [];
+      try { messages = JSON.parse(localStorage.getItem('mh_chat_messages') || '[]'); } catch(e) {}
+      messages.push({name:student.name || 'Thành viên MHstudy', text:value, time:Date.now()});
+      localStorage.setItem('mh_chat_messages', JSON.stringify(messages.slice(-100)));
+      input.value = ''; status.textContent = 'Đã đăng trong bản xem trước trên thiết bị này.'; renderStudyChat();
+    }
+
+    /* ==========================================================================
+       RANKING BOARD RENDER
+       ========================================================================== */
+    function renderRank() {
+      let arr = JSON.parse(localStorage.getItem('mh_rankings') || '[]');
+      if (arr.length === 0) {
+        // Mock data if empty
+        arr = [
+          { name: 'Nguyễn Văn A', sbd: '100001', subject: 'Ngữ Văn', score: 10, lp: 720 },
+          { name: 'Lê Thị B', sbd: '100002', subject: 'Toán Học', score: 9.8, lp: 540 },
+          { name: 'Trần Văn C', sbd: '100003', subject: 'Tiếng Anh', score: 9.5, lp: 320 }
+        ];
+      }
+
+      document.getElementById('rankbox').innerHTML = `
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-900/90 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">Hạng</th>
+              <th class="p-3.5">Thí Sinh</th>
+              <th class="p-3.5">Bậc Rank Gank</th>
+              <th class="p-3.5">Điểm LP</th>
+              <th class="p-3.5">Điểm Cao Nhất</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+            ${arr.map((x, i) => {
+              const rInfo = getGankRank(x.lp || 0);
+              return `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                  <td class="p-3.5 font-bold text-indigo-400">#${i+1}</td>
+                  <td class="p-3.5"><strong class="text-white block">${esc(x.name)}</strong><span class="text-[10px] text-slate-500">SBD: ${esc(x.sbd)}</span></td>
+                  <td class="p-3.5"><span class="font-bold text-xs">${rInfo.icon} ${rInfo.name}</span></td>
+                  <td class="p-3.5 font-bold font-mono text-pink-400">${x.lp || 0} LP</td>
+                  <td class="p-3.5 font-bold text-amber-300">${x.score} / 10</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function showReview() {
+      switchTab('review');
+      document.getElementById('reviewContent').innerHTML = `
+        <div class="text-xs text-slate-300 space-y-4">
+          <h3 class="font-bold text-base text-white">${esc(current.title)}</h3>
+          <p>Đối chiếu lời giải chi tiết và ma trận kiến thức cho bài làm vừa hoàn thành của bạn.</p>
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-indigo-300">
+            Đã hoàn tất lưu chi tiết lời giải vào hệ thống MHstudy.
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       SYLLABUS UPLOAD GENERATOR (PDF/DOCX/TXT)
+       ========================================================================== */
+    function loadScriptOnce(src, test) {
+      return new Promise((resolve, reject) => {
+        if (test()) return resolve();
+        let script = document.querySelector(`script[src="${src}"]`);
+        if (!script) { script = document.createElement('script'); script.src = src; document.head.appendChild(script); }
+        script.addEventListener('load', () => test() ? resolve() : reject(new Error('Không khởi tạo được thư viện đọc tệp.')), {once:true});
+        script.addEventListener('error', () => reject(new Error('Không tải được thư viện đọc tệp. Hãy kiểm tra kết nối mạng rồi thử lại.')), {once:true});
+      });
+    }
+
+    async function extractUploadedText(file) {
+      const name = file.name.toLowerCase();
+      if (name.endsWith('.txt') || name.endsWith('.md')) return await file.text();
+      if (name.endsWith('.pdf')) {
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', () => !!window.pdfjsLib);
+        const pdfjs = window.pdfjsLib;
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const data = new Uint8Array(await file.arrayBuffer());
+        const pdf = await pdfjs.getDocument({data}).promise;
+        let pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          pages.push(content.items.map(x => x.str).join(' '));
+        }
+        return pages.join('\n');
+      }
+      if (name.endsWith('.docx')) {
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js', () => !!window.mammoth);
+        const result = await window.mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()});
+        return result.value || '';
+      }
+      throw new Error('Định dạng chưa hỗ trợ. Hãy chọn PDF, DOCX, TXT hoặc MD.');
+    }
+
+    function splitStudyFacts(rawText) {
+      const cleaned = rawText.replace(/\u0000/g, ' ').replace(/[\t ]+/g, ' ').replace(/\r/g, '\n');
+      const chunks = cleaned.split(/(?<=[.!?。！？])\s+|\n+/).map(x => x.trim())
+        .map(x => x.replace(/^[-•*#\d.)\s]+/, '').trim())
+        .filter(x => x.length >= 28 && x.length <= 320 && /[\p{L}]{3}/u.test(x));
+      const seen = new Set(), facts = [];
+      for (const chunk of chunks) {
+        const normalized = chunk.toLocaleLowerCase('vi').replace(/\s+/g, ' ');
+        if (!seen.has(normalized)) { seen.add(normalized); facts.push(chunk); }
+      }
+      return facts;
+    }
+
+    function extractQuestionTerms(sentence) {
+      const stop = new Set([
+        'những','được','trong','ngoài','trên','dưới','của','cho','với','một','các','này','đó','khi','thì','là','và','hoặc',
+        'theo','đến','từ','sau','trước','nên','phải','cũng','đã','đang','sẽ','có','không','vào','bởi','vì','như','để',
+        'this','that','these','those','from','with','into','have','has','are','was','were','the','and','for','their'
+      ]);
+      const candidates = [];
+      const add = (value, score) => {
+        const v = (value || '').trim().replace(/^[,;:()\-–—\s]+|[,;:()\-–—\s]+$/g, '');
+        const words = v.split(/\s+/);
+        if (v.length >= 3 && v.length <= 48 && words.length <= 5 &&
+            !stop.has(v.toLocaleLowerCase('vi')) && /[\p{L}\d]/u.test(v)) {
+          if (!candidates.some(x => x.value.toLocaleLowerCase('vi') === v.toLocaleLowerCase('vi'))) candidates.push({value:v, score});
+        }
+      };
+
+      // Những cấu trúc định nghĩa, phân loại, chức năng thường gặp trong tài liệu học tập.
+      const patterns = [
+        /(?:được gọi là|gọi là|có tên là|được xác định là|được hiểu là|là)\s+([^,;:.!?]{3,48})/iu,
+        /(?:bao gồm|gồm có|gồm|được chia thành|được cấu tạo từ|có vai trò|có chức năng)\s+([^,;:.!?]{3,48})/iu,
+        /(?:chiếm|đạt|bằng|tăng lên|giảm xuống)\s+([\d,.]+(?:\s*%|\s*[a-zA-ZÀ-ỹ]+)?)/iu,
+        /\b(?:năm|thế kỉ|thế kỷ)\s+(\d{1,4})\b/iu
+      ];
+      patterns.forEach((re, i) => {
+        const m = sentence.match(re);
+        if (m && m[1]) add(m[1].split(/\s+(?:và|nhưng|do đó|vì vậy)\s+/i)[0], 12 - i);
+      });
+
+      // Ưu tiên tên riêng, thuật ngữ viết hoa và con số có trong chính tài liệu.
+      (sentence.match(/\b[A-ZĐ][\p{L}\d]*(?:\s+[A-ZĐ][\p{L}\d]*){0,3}\b/gu) || []).forEach(x => add(x, 8));
+      (sentence.match(/\b\d+(?:[.,]\d+)?\s*%?\b/g) || []).forEach(x => add(x, 7));
+
+      // Dự phòng: lấy cụm từ có nội dung, không lấy hư từ đơn lẻ.
+      sentence.split(/[,:;()]/).forEach(part => {
+        const ws = part.trim().split(/\s+/).filter(w => w && !stop.has(w.toLocaleLowerCase('vi')));
+        if (ws.length >= 2) add(ws.slice(-Math.min(4, ws.length)).join(' '), 2);
+        ws.filter(w => w.length >= 5).forEach(w => add(w, 1));
+      });
+      candidates.sort((a,b) => b.score - a.score || b.value.length - a.value.length);
+      return candidates.map(x => x.value);
+    }
+
+    function stableShuffle(items, seed) {
+      const arr = items.slice();
+      let x = seed >>> 0;
+      for (let i = arr.length - 1; i > 0; i--) {
+        x = (x * 1664525 + 1013904223) >>> 0;
+        const j = x % (i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function makeUploadExam(facts, fileName) {
+      const usable = facts.filter(x => x.length >= 35 && x.length <= 300);
+      if (usable.length < 20) throw new Error('Tài liệu cần ít nhất 20 ý kiến thức rõ ràng để tạo đề kiểm tra đủ phần.');
+      const seed = usable.length + fileName.length;
+      const shuffled = stableShuffle(usable, seed);
+      const chosen = shuffled.slice(0, 12);
+      const questions = chosen.map((fact, i) => {
+        const topic = extractQuestionTerms(fact)[0] || 'nội dung kiến thức';
+        const distractors = stableShuffle(usable.filter(x => x !== fact && !x.toLocaleLowerCase('vi').includes(topic.toLocaleLowerCase('vi'))), seed + i * 13).slice(0, 3);
+        if (distractors.length < 3) throw new Error('Tài liệu chưa có đủ nội dung khác nhau để tạo phương án nhiễu hợp lý.');
+        const opts = stableShuffle([fact, ...distractors], seed + i * 29);
+        return {q:`Theo nội dung tài liệu, phát biểu nào trình bày đúng về kiến thức${topic !== 'nội dung kiến thức' ? ` liên quan đến “${topic}”` : ''}?`, o:opts, a:opts.indexOf(fact)};
+      });
+      const tfPool = stableShuffle(usable.filter(x => !chosen.includes(x)), seed * 3 + 5);
+      if (tfPool.length < 8) throw new Error('Không đủ dữ kiện độc lập để tạo phần đúng/sai.');
+      const tf = Array.from({length:4}, (_, qi) => ({
+        q:'Đối chiếu từng nhận định với nội dung kiến thức trong tài liệu và chọn Đúng hoặc Sai.',
+        items:[0,1,2,3].map(k => {
+          const source = tfPool[qi * 2 + Math.floor(k / 2)];
+          // Hai nhận định được trích nguyên văn; hai nhận định còn lại đảo nghĩa bằng phủ định rõ ràng,
+          // không tự thêm kiến thức ngoài nguồn.
+          const isTrue = k % 2 === 0;
+          const text = isTrue ? source : `Nhận định sau là không đúng: ${source}`;
+          return {text, answer:isTrue};
+        })
+      }));
+      const essayPool = stableShuffle(usable, seed * 7 + 9).slice(0,3);
+      const written = essayPool.map((fact,i) => ({q:[
+        `Trình bày lại bằng lời văn của em nội dung kiến thức được nêu trong nhận định: “${fact}”`,
+        `Phân tích ý nghĩa hoặc vai trò của nội dung kiến thức sau, dựa trên tài liệu: “${fact}”`,
+        `Vận dụng kiến thức trong nhận định sau để giải thích một ví dụ hoặc tình huống phù hợp: “${fact}”`
+      ][i]}));
+      return {id:++customExamId,title:'Đề kiểm tra ôn tập • '+fileName,desc:'12 câu trắc nghiệm + 4 câu đúng/sai (16 nhận định) + 3 câu tự luận',sourceName:fileName,sourcePreview:chosen.slice(0,3).join(' '),questions,tf,written};
+    }
+    async function generateFromUpload() {
+      const input = document.getElementById('syllabusFile');
+      const file = input.files && input.files[0];
+      const status = document.getElementById('uploadStatus');
+      const button = document.querySelector('button[onclick="generateFromUpload()"]');
+      if (!file) { status.textContent = 'Bạn hãy chọn một tài liệu trước.'; return; }
+      const allowed = /\.(pdf|docx|txt|md)$/i.test(file.name);
+      if (!allowed) { status.textContent = 'Tệp chưa đúng định dạng. Chỉ nhận PDF, DOCX, TXT hoặc MD.'; return; }
+      if (file.size > 20 * 1024 * 1024) { status.textContent = 'Tệp quá lớn (giới hạn 20 MB).'; return; }
+      button.disabled = true; button.classList.add('opacity-50');
+      status.textContent = 'Đang đọc và trích xuất nội dung tài liệu...';
+      try {
+        const text = await extractUploadedText(file);
+        const normalized = text.replace(/\s+/g, ' ').trim();
+        if (normalized.length < 300) throw new Error('Không trích xuất được đủ văn bản. Nếu PDF là bản scan/ảnh, hãy dùng PDF có thể chọn và sao chép chữ hoặc chuyển sang DOCX/TXT.');
+        const facts = splitStudyFacts(text);
+        if (facts.length < 20) throw new Error(`Tài liệu chỉ trích xuất được ${facts.length} ý/câu đủ rõ; cần ít nhất 20 ý để tạo bộ đề đáng tin cậy. Hãy dùng tài liệu có nhiều nội dung chữ hơn.`);
+        const exam = makeUploadExam(facts, file.name);
+        customExams.unshift(exam);
+        status.textContent = `Đã đọc ${normalized.length.toLocaleString('vi-VN')} ký tự và tạo đủ 12 trắc nghiệm, 4 câu đúng/sai, 3 tự luận từ tài liệu. Đang mở kho đề...`;
+        input.value = '';
+        openSubject('custom');
+      } catch(e) {
+        status.textContent = 'Chưa tạo được đề: ' + (e && e.message ? e.message : 'Lỗi đọc tệp.');
+      } finally {
+        button.disabled = false; button.classList.remove('opacity-50');
+      }
+    }
+
+    function esc(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ĐẤU TRƯỜNG DANH VỌNG — AI mô phỏng chạy cục bộ, không cần API.
+    const arenaBanks = {
+      math:[
+        ['Giá trị của 3² + 4² là bao nhiêu?',['7','12','25','49'],2],['Nghiệm của phương trình 2x + 6 = 14 là?',['2','3','4','5'],2],['Diện tích hình chữ nhật dài 8 cm, rộng 5 cm là?',['13 cm²','26 cm²','40 cm²','80 cm²'],2],['Số nào là số nguyên tố?',['21','27','29','33'],2],['Căn bậc hai số học của 81 là?',['8','9','-9','18'],1],['Tổng ba góc trong một tam giác bằng?',['90°','180°','270°','360°'],1],['Phân số 3/4 viết dưới dạng phần trăm là?',['25%','50%','75%','80%'],2],['Nếu y = 2x và x = 7 thì y bằng?',['9','12','14','16'],2],['Chu vi hình vuông cạnh 6 cm là?',['12 cm','18 cm','24 cm','36 cm'],2],['Giá trị của 15% của 200 là?',['15','20','30','45'],2],['Đường thẳng y = 2x + 1 có hệ số góc là?',['1','2','-1','-2'],1],['Giải x² = 49 được?',['x = 7','x = -7','x=±7','x=49'],2],['Số đối của -12 là?',['-12','0','12','1/12'],2],['Trung bình cộng của 4, 6, 8 là?',['5','6','7','8'],1],['Một góc vuông có số đo?',['45°','60°','90°','180°'],2]
+      ],
+      english:[
+        ['Choose the correct form: She ___ to school every day.',['go','goes','going','gone'],1],['The opposite of “ancient” is ___.',['old','modern','historic','traditional'],1],['Choose the correct article: ___ apple a day.',['A','An','The','No article'],1],['Past tense of “write” is ___.',['writed','written','wrote','writing'],2],['“Environment” is closest in meaning to ___.',['surroundings','equipment','homework','journey'],0],['Choose the correct sentence.',['He don’t like tea.','He doesn’t likes tea.','He doesn’t like tea.','He not like tea.'],2],['If it rains, we ___ at home.',['stay','stayed','will stay','staying'],2],['The plural of “child” is ___.',['childs','children','childes','childrens'],1],['“Carefully” is an ___.',['noun','adjective','adverb','verb'],2],['She is interested ___ music.',['on','at','in','for'],2],['Choose the comparative: “good”.',['gooder','more good','best','better'],3],['We have lived here ___ 2020.',['for','since','during','from'],1],['A person who teaches students is a ___.',['doctor','teacher','farmer','driver'],1],['Choose the correct passive form: “They built the bridge.”',['The bridge is built.','The bridge was built.','The bridge built.','The bridge has build.'],1],['“Although” expresses ___.',['reason','contrast','result','time'],1]
+      ],
+      literature:[
+        ['Biện pháp tu từ so sánh thường sử dụng từ ngữ nào?',['là, thì','như, tựa, giống','ôi, than ôi','và, với'],1],['Nhân hóa là gọi hoặc tả sự vật bằng cách dùng từ ngữ chỉ ___.',['hoạt động, đặc điểm của con người','màu sắc','số lượng','thời gian'],0],['Thành phần biệt lập tình thái dùng để thể hiện ___.',['thái độ, cách nhìn của người nói','thời gian diễn ra','chủ ngữ','vị ngữ'],0],['Một bài văn nghị luận xã hội thường cần có ___.',['luận điểm và lí lẽ','chỉ lời thoại','chỉ miêu tả','danh sách nhân vật'],0],['Từ láy “lung linh” gợi tả chủ yếu điều gì?',['âm thanh','ánh sáng, vẻ đẹp lấp lánh','mùi vị','kích thước'],1],['Điệp ngữ là biện pháp ___.',['lặp lại từ ngữ có dụng ý','đảo vị trí câu','nói giảm','liệt kê số liệu'],0],['Truyện ngắn thuộc loại hình ___.',['tự sự','trữ tình thuần túy','nghị luận','hành chính'],0],['Ẩn dụ dựa trên quan hệ ___.',['tương đồng','nguyên nhân-kết quả','gần âm','đối lập ngữ pháp'],0],['Luận cứ trong văn nghị luận có tác dụng ___.',['làm sáng tỏ luận điểm','thay thế nhan đề','kết thúc văn bản','miêu tả nhân vật'],0],['Ngôi kể thứ nhất thường dùng đại từ ___.',['hắn','nó','tôi','họ'],2],['Hoán dụ thường dựa trên quan hệ ___.',['gần gũi','đồng âm','trái nghĩa','vần điệu'],0],['Phần mở bài của bài nghị luận thường có nhiệm vụ ___.',['giới thiệu vấn đề','liệt kê dẫn chứng cuối bài','khẳng định lại kết luận','ghi nguồn tài liệu'],0],['Từ tượng thanh mô phỏng ___.',['âm thanh','hình dáng','màu sắc','cảm xúc'],0],['Chủ đề của tác phẩm là ___.',['vấn đề chính được đặt ra','tên tác giả','số chương','nơi in sách'],0],['Kết bài nghị luận thường có nhiệm vụ ___.',['mở thêm nhân vật','khái quát và khẳng định vấn đề','nêu toàn bộ dẫn chứng mới','kể lại mở bài'],1]
+      ],
+      science:[
+        ['Đơn vị cơ bản của sự sống là?',['mô','cơ quan','tế bào','hệ cơ quan'],2],['Cơ quan thực hiện quang hợp chủ yếu ở thực vật là?',['rễ','lá','hoa','quả'],1],['Nước có công thức hóa học là?',['CO₂','O₂','H₂O','NaCl'],2],['Lực hút của Trái Đất tác dụng lên vật gọi là?',['ma sát','trọng lực','đàn hồi','đẩy'],1],['Khí cần thiết cho hô hấp hiếu khí là?',['nitơ','oxi','heli','hiđro'],1],['Hành tinh gần Mặt Trời nhất là?',['Trái Đất','Sao Hỏa','Sao Thủy','Sao Mộc'],2],['Dung dịch có pH nhỏ hơn 7 thường có tính?',['axit','bazơ','trung tính','muối'],0],['Bộ phận điều khiển hoạt động tế bào là?',['màng tế bào','nhân tế bào','tế bào chất','không bào'],1],['Đơn vị đo cường độ dòng điện là?',['vôn','oát','ampe','ôm'],2],['Quá trình cây thoát hơi nước chủ yếu qua?',['khí khổng','rễ','thân gỗ','hạt'],0],['Chất tinh khiết chỉ gồm?',['một chất','nhiều chất','hai dung dịch','hỗn hợp'],0],['Âm thanh không truyền được trong?',['nước','không khí','chất rắn','chân không'],3],['Nguồn năng lượng chính của Trái Đất là?',['Mặt Trăng','Mặt Trời','gió','địa nhiệt'],1],['Máu vận chuyển khí oxi nhờ thành phần nào?',['hồng cầu','tiểu cầu','huyết tương','bạch cầu'],0],['Hiện tượng nước chuyển từ lỏng sang khí gọi là?',['đông đặc','ngưng tụ','bay hơi','nóng chảy'],2]
+      ]
+    };
+    let arenaState = null, arenaTimer = null;
+    function renderArenaSummary(){
+      const lp = Number(student.lp || 0), tier = getGankRank(lp);
+      document.getElementById('arenaLp').textContent = lp + ' LP';
+      document.getElementById('arenaTier').textContent = tier.icon + ' ' + tier.name;
+    }
+    function createArenaRoom(){
+      const code = 'MH' + Math.random().toString(36).slice(2,6).toUpperCase();
+      document.getElementById('arenaRoomCode').value = code;
+      document.getElementById('arenaRoomStatus').textContent = 'Đã tạo mã minh họa ' + code + '. Để mời người chơi ở thiết bị khác cần triển khai máy chủ trực tuyến.';
+    }
+    function copyArenaRoom(){
+      const code = document.getElementById('arenaRoomCode').value.trim();
+      if(!code){ document.getElementById('arenaRoomStatus').textContent='Hãy tạo hoặc nhập mã phòng trước.'; return; }
+      if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(()=>document.getElementById('arenaRoomStatus').textContent='Đã sao chép mã ' + code + '. Lưu ý: mã chưa kết nối ghép trận trực tuyến.').catch(()=>document.getElementById('arenaRoomStatus').textContent='Mã phòng: ' + code);
+      else document.getElementById('arenaRoomStatus').textContent='Mã phòng: ' + code + ' (hãy sao chép thủ công).';
+    }
+    function startArenaAI(){
+      const subjectKey=document.getElementById('arenaSubject').value, difficulty=document.getElementById('arenaDifficulty').value;
+      const count=Number(document.getElementById('arenaCount').value), minutes=Number(document.getElementById('arenaDuration').value);
+      const bank=arenaBanks[subjectKey];
+      const qs=stableShuffle(bank, Date.now()).slice(0,count);
+      const aiBase={easy:0.58,normal:0.70,hard:0.82}[difficulty];
+      const aiCorrect=Math.max(0,Math.min(count,Math.round(count*aiBase + (Math.random()-.5)*2)));
+      arenaState={qs,subjectKey,difficulty,minutes,aiCorrect,started:Date.now(),ended:false};
+      document.getElementById('arenaResult').classList.add('hidden');
+      document.getElementById('arenaMatch').classList.remove('hidden');
+      document.getElementById('arenaMatchMode').textContent='🤖 ĐẤU VỚI AI';
+      document.getElementById('arenaMatchTitle').textContent=({math:'Toán',english:'Tiếng Anh',literature:'Ngữ Văn',science:'Khoa học'}[subjectKey])+' • '+({easy:'Dễ',normal:'Trung bình',hard:'Khó'}[difficulty]);
+      document.getElementById('arenaQuestionList').innerHTML=qs.map((q,i)=>`<div class="rounded-xl bg-slate-900/70 border border-slate-800 p-4 space-y-3"><h4 class="font-bold text-sm text-white">Câu ${i+1}. ${esc(q[0])}</h4><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${q[1].map((o,j)=>`<label class="flex items-center gap-2 rounded-lg border border-slate-700 p-3 text-xs text-slate-200"><input type="radio" name="arenaQ${i}" value="${j}" class="accent-indigo-500"> ${String.fromCharCode(65+j)}. ${esc(o)}</label>`).join('')}</div></div>`).join('');
+      arenaState.remain=minutes*60; updateArenaClock(); clearInterval(arenaTimer); arenaTimer=setInterval(()=>{if(!arenaState||arenaState.ended)return;arenaState.remain--;updateArenaClock();if(arenaState.remain<=0)finishArenaMatch(true);},1000);
+      document.getElementById('arenaMatch').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    function updateArenaClock(){
+      const n=Math.max(0,arenaState?.remain||0),m=Math.floor(n/60),s=n%60;
+      document.getElementById('arenaClock').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+      document.getElementById('arenaProgress').textContent=`${arenaState.qs.length} câu • ${document.querySelectorAll('#arenaQuestionList input:checked').length} câu đã chọn`;
+    }
+    function finishArenaMatch(auto){
+      if(!arenaState||arenaState.ended)return; arenaState.ended=true; clearInterval(arenaTimer);
+      let correct=0; arenaState.qs.forEach((q,i)=>{const sel=document.querySelector(`input[name="arenaQ${i}"]:checked`);if(sel&&Number(sel.value)===q[2])correct++;});
+      const won=correct>arenaState.aiCorrect,draw=correct===arenaState.aiCorrect;
+      const gained=won?8:0; student.lp=Math.max(0,(student.lp||0)+gained); student.totalExams=(student.totalExams||0)+1;if(won)student.wins=(student.wins||0)+1;
+      // Keep profile fields intact; saveStudent reads visible identity inputs.
+      localStorage.setItem('mh_student',JSON.stringify(student)); updateUIHeader(); renderArenaSummary();
+      const arr=JSON.parse(localStorage.getItem('mh_rankings')||'[]');arr.push({name:student.name||'Thí sinh',sbd:student.sbd||'---',subject:'Đấu AI',score:Math.round(correct/arenaState.qs.length*100)/10,lp:student.lp,time:Date.now()});arr.sort((a,b)=>b.lp-a.lp);localStorage.setItem('mh_rankings',JSON.stringify(arr.slice(0,50)));
+      const result=document.getElementById('arenaResult');result.classList.remove('hidden');
+      result.innerHTML=`<h3 class="text-xl font-black text-white">${won?'🎉 Bạn chiến thắng!':draw?'🤝 Kết quả hòa!':'💪 AI thắng hiệp này!'}</h3><p class="text-sm text-slate-300 mt-2">Bạn: <b>${correct}/${arenaState.qs.length}</b> câu đúng • AI: <b>${arenaState.aiCorrect}/${arenaState.qs.length}</b> câu đúng.</p><p class="text-sm font-bold ${gained?'text-emerald-300':'text-slate-300'} mt-2">${gained?'+'+gained+' LP được cộng.':'Không bị trừ LP khi thua hoặc hòa.'}</p><p class="text-xs text-slate-500 mt-2">${auto?'Hệ thống tự nộp bài khi hết giờ.':'Bạn đã chủ động nộp bài.'} Đối thủ AI là mô phỏng cục bộ, không phải dịch vụ AI trực tuyến.</p><button onclick="startArenaAI()" class="mt-4 bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 rounded-xl text-xs font-bold text-white">Đấu lại</button>`;
+      result.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+
+    // INIT
+    window.onload = function() {
+      loadStudent();
+    }
+  </script>
+</body>
+</html>
